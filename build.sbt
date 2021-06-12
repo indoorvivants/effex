@@ -43,7 +43,8 @@ lazy val demo =
       libraryDependencies ++= Seq(
         "org.http4s" %% "http4s-ember-server" % Versions.http4s,
         "org.http4s" %% "http4s-dsl"          % Versions.http4s
-      )
+      ),
+      publish / skip := true
     )
     .settings(simpleLayout ++ commons)
 
