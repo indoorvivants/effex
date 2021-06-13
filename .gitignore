@@ -1,4 +1,6 @@
-core/target
-demo/target
+modules/**/target
+target
 project/project
 project/target
+project/metals.sbt
+.bsp

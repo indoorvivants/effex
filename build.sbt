@@ -19,7 +19,7 @@ lazy val root = project.aggregate(core, demo)
 
 lazy val core =
   project
-    .in(file("core"))
+    .in(file("modules/core"))
     .settings(
       libraryDependencies += "org.scalafx"   %% "scalafx"     % Versions.scalaFX,
       libraryDependencies += "org.typelevel" %% "cats-effect" % Versions.catsEffect,
@@ -27,13 +27,14 @@ lazy val core =
       libraryDependencies ++= javaFXDependencies(
         Seq("base", "controls"),
         provided = true
-      )
+      ),
+      name := "core"
     )
     .settings(simpleLayout ++ commons)
 
 lazy val demo =
   project
-    .in(file("demo"))
+    .in(file("modules/demo"))
     .dependsOn(core)
     .settings(
       libraryDependencies ++= javaFXDependencies(
@@ -47,6 +48,12 @@ lazy val demo =
       publish / skip := true
     )
     .settings(simpleLayout ++ commons)
+
+lazy val docs = 
+  project.in(file("modules/docs"))
+    /* .dependsOn(core) */
+    .enablePlugins(SubatomicPlugin)
+    .settings(publish / skip := true)
 
 // HELPERS
 def osName = System.getProperty("os.name") match {
@@ -76,5 +83,6 @@ lazy val simpleLayout = Seq[Setting[_]](
 lazy val commons = Seq(
   scalacOptions ++= Seq("-source:future", "-language:adhocExtensions"),
   scalaVersion := Versions.Scala,
-  crossScalaVersions := Versions.AllScala
+  crossScalaVersions := Versions.AllScala,
+  organization := "com.indoorvivants.effex"
 )
