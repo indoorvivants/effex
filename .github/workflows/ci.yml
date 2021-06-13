@@ -22,7 +22,7 @@ jobs:
       
       - name: Build site
         # run: sbt "compile; docs/run build --destination $(pwd)/_site"
-        run: sbt +test
+        run: sbt +test scalafmtCheckAll
 
   release:
     name: Release

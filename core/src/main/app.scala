@@ -9,13 +9,25 @@ import cats.effect.std.Dispatcher
 import cats.syntax.all.given
 
 abstract class JfxIOApp extends IOApp:
-  type Inject = (Dispatcher[IO], Supervisor[IO]) ?=> PrimaryStage
+  type Inject[T] = (Dispatcher[IO], Supervisor[IO]) ?=> Resource[IO, T]
 
-  def stage(args: List[String]): Resource[IO, Inject]
+  def stage(args: List[String]): (
+      Dispatcher[IO],
+      Supervisor[IO]
+  ) ?=> Resource[IO, (Dispatcher[IO], Supervisor[IO]) ?=> PrimaryStage]
 
   def run(args: List[String]): IO[ExitCode] =
-    (Dispatcher[IO], Supervisor[IO], stage(args)).parTupled.use {
-      case (disp, spv, stg) =>
+    (Dispatcher[IO], Supervisor[IO]).parTupled
+      .flatMap { case (disp, spv) =>
+        stage(args)(using disp, spv).map { stgF =>
+          (
+            disp,
+            spv,
+            (d: Dispatcher[IO], s: Supervisor[IO]) ?=> stgF(using d, s)
+          )
+        }
+      }
+      .use { case (disp, spv, stg) =>
         val jfxApp = IO(
           new JFXApp3:
             override def start(): Unit =
@@ -27,5 +39,5 @@ abstract class JfxIOApp extends IOApp:
             IO.interruptible(false)(app.main(args.toArray))
           }
           .as(ExitCode.Success)
-    }
+      }
 end JfxIOApp

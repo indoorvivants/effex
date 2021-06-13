@@ -12,29 +12,25 @@ import fs2.concurrent.SignallingRef
 import scalafx.scene.control.Button
 import scalafx.geometry.Insets
 
-object state extends JfxIOApp:
+object readOnly extends JfxIOApp:
+  case class WindowSize(width: Int, height: Int)
   def stage(args: List[String]) =
-    Resource.eval(SignallingRef.of[IO, Int](0)).map { state =>
+    val default = WindowSize(300, 450)
+    Resource.eval(SignallingRef.of[IO, WindowSize](default)).map { state =>
       new JFXApp3.PrimaryStage:
         title.value = "Hello"
-        width = 300
-        height = 450
+        width = default.width
+        height = default.height
+
+        width.$update(state, w => i => w.copy(width = i.intValue))
+        height.$update(state, w => i => w.copy(height = i.intValue))
+
         scene = new Scene:
           root = new VBox:
             padding = Insets(15, 15, 15, 15)
             children = Seq(
-              new Label(""):
+              new Label:
                 text.$observe(state.map(_.toString))
-              ,
-              new Button("Increase"):
-                this.setOnAction { _ =>
-                  state.update(_ + 1).dispatchAsync
-                }
-              ,
-              new Button("Decrease"):
-                this.setOnAction { _ =>
-                  state.update(_ - 1).dispatchAsync
-                }
             )
     }
-end state
+end readOnly

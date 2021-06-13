@@ -26,7 +26,7 @@ lazy val core =
       libraryDependencies += "co.fs2"        %% "fs2-core"    % Versions.fs2,
       libraryDependencies ++= javaFXDependencies(
         Seq("base", "controls"),
-        provided = false
+        provided = true
       )
     )
     .settings(simpleLayout ++ commons)
