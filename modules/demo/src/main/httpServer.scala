@@ -30,25 +30,6 @@ import java.time.DateTimeException
 import java.time.format.DateTimeFormatter
 import org.http4s.server.Server
 
-object Tracker:
-  def folding[T](max: Int, signal: Signal[IO, T])(using
-      s: EffexEnv
-  ): IO[SignallingRef[IO, Vector[(OffsetDateTime, T)]]] =
-    SignallingRef.of[IO, Vector[(OffsetDateTime, T)]](Vector.empty).flatMap {
-      chainRef =>
-        val constantUpdate = signal.discrete
-          .evalMap(v => IO(OffsetDateTime.now).map(_ -> v))
-          .evalMap { newValue =>
-            chainRef.update { chain =>
-              if chain.length == max then newValue +: chain.init
-              else newValue +: chain
-            }
-          }
-
-        s.superv.supervise(constantUpdate.compile.drain).as(chainRef)
-    }
-end Tracker
-
 object httpServer extends JfxIOApp:
   def stage(args: List[String]) =
     val host = Hostname.fromString("localhost").get
@@ -74,73 +55,93 @@ object httpServer extends JfxIOApp:
       }
   end stage
 
-  def trackingChart(
-      tracker: Signal[IO, Vector[(OffsetDateTime, Int)]]
-  )(using EffexEnv) =
-    new LineChart(CategoryAxis("Time"), NumberAxis("Counter Value")):
-      title = "History of changes"
-      data.$observe(tracker.map(toSeries).map(_.delegate))
-
-  def infoLabel(running: Server) =
-    new Label:
-      style = "-fx-font-size: 15px"
-      text = s"""
-          | The server is running on ${running.baseUri}
-          | To increment the counter: 
-          |   POST ${running.baseUri.withPath("/increment")}
-          | To decrement the counter: 
-          |   POST ${running.baseUri.withPath("/decrement")}
-          | To get the current counter: 
-          |   GET ${running.baseUri.withPath("/get")}
-          """.stripMargin
-
-  def counterLabel(
-      state: Signal[IO, Int]
-  )(using EffexEnv) =
-    new Label:
-      text.$observe(state.map("Current counter:" + _.toString))
-
-      style.$observe(
-        state
-          .map { num =>
-            if num % 2 == 0 then List("-fx-text-fill: red")
-            else List("-fx-text-fill: darkgreen")
-          }
-          .map("-fx-font-size: 15px;" :: _)
-          .map(_.mkString("\n"))
-      )
-
-  def toSeries(buf: Vector[(OffsetDateTime, Int)]) =
-    val dataPairs = buf.reverse.map { case (timestamp, value) =>
-      XYChart.Data[String, Number](
-        timestamp.withNano(0).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-        value
-      )
-    }
-
-    val observableBuffer = ObservableBuffer.from(dataPairs)
-    val series           = XYChart.Series.apply("Series 1", observableBuffer)
-
-    ObservableBuffer(series)
-
-  def server(state: Ref[IO, Int], host: Hostname, port: Port) =
-    import org.http4s.dsl.io.*
-    import org.http4s.implicits.*
-    val app = HttpRoutes.of[IO] {
-      case POST -> Root / "increment" =>
-        state.update(_ + 1) *> Ok()
-      case POST -> Root / "decrement" =>
-        state.update(_ - 1) *> Ok()
-      case GET -> Root / "get" =>
-        state.get.flatMap(res => Ok(res.toString))
-    }
-
-    EmberServerBuilder
-      .default[IO]
-      .withHost(host)
-      .withPort(port)
-      .withHttpApp(app.orNotFound)
-      .build
-  end server
-
 end httpServer
+
+def server(state: Ref[IO, Int], host: Hostname, port: Port) =
+  import org.http4s.dsl.io.*
+  import org.http4s.implicits.*
+  val app = HttpRoutes.of[IO] {
+    case POST -> Root / "increment" =>
+      state.update(_ + 1) *> Ok()
+    case POST -> Root / "decrement" =>
+      state.update(_ - 1) *> Ok()
+    case GET -> Root / "get" =>
+      state.get.flatMap(res => Ok(res.toString))
+  }
+
+  EmberServerBuilder
+    .default[IO]
+    .withHost(host)
+    .withPort(port)
+    .withHttpApp(app.orNotFound)
+    .build
+end server
+
+def trackingChart(
+    tracker: Signal[IO, Vector[(OffsetDateTime, Int)]]
+)(using EffexEnv) =
+  new LineChart(CategoryAxis("Time"), NumberAxis("Counter Value")):
+    title = "History of changes"
+    data.$observe(tracker.map(toSeries).map(_.delegate))
+
+def infoLabel(running: Server) =
+  new Label:
+    style = "-fx-font-size: 15px"
+    text = s"""
+        | The server is running on ${running.baseUri}
+        | To increment the counter: 
+        |   POST ${running.baseUri.withPath("/increment")}
+        | To decrement the counter: 
+        |   POST ${running.baseUri.withPath("/decrement")}
+        | To get the current counter: 
+        |   GET ${running.baseUri.withPath("/get")}
+        """.stripMargin
+
+def toSeries(buf: Vector[(OffsetDateTime, Int)]) =
+  val dataPairs = buf.reverse.map { case (timestamp, value) =>
+    XYChart.Data[String, Number](
+      timestamp.withNano(0).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+      value
+    )
+  }
+
+  val observableBuffer = ObservableBuffer.from(dataPairs)
+  val series           = XYChart.Series.apply("Series 1", observableBuffer)
+
+  ObservableBuffer(series)
+end toSeries
+
+def counterLabel(
+    state: Signal[IO, Int]
+)(using EffexEnv) =
+  new Label:
+    text.$observe(state.map("Current counter:" + _.toString))
+
+    style.$observe(
+      state
+        .map { num =>
+          if num % 2 == 0 then List("-fx-text-fill: red")
+          else List("-fx-text-fill: darkgreen")
+        }
+        .map("-fx-font-size: 15px;" :: _)
+        .map(_.mkString("\n"))
+    )
+
+object Tracker:
+  def folding[T](max: Int, signal: Signal[IO, T])(using
+      s: EffexEnv
+  ): IO[SignallingRef[IO, Vector[(OffsetDateTime, T)]]] =
+    SignallingRef.of[IO, Vector[(OffsetDateTime, T)]](Vector.empty).flatMap {
+      chainRef =>
+        val constantUpdate = signal.discrete
+          .evalMap(v => IO(OffsetDateTime.now).map(_ -> v))
+          .evalMap { newValue =>
+            chainRef.update { chain =>
+              if chain.length == max then newValue +: chain.init
+              else newValue +: chain
+            }
+          }
+
+        s.superv.supervise(constantUpdate.compile.drain).as(chainRef)
+    }
+end Tracker

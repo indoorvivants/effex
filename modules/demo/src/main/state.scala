@@ -16,7 +16,7 @@ object state extends JfxIOApp.Simple:
   def stage =
     SignallingRef.of[IO, Int](0).map { state =>
       new JFXApp3.PrimaryStage:
-        title.value = "Hello"
+        title.$observe(state.map(_.toString).map(_ + " and counting!"))
         width = 300
         height = 450
         scene = new Scene:
