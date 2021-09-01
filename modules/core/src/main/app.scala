@@ -8,30 +8,31 @@ import cats.effect.std.Supervisor
 import cats.effect.std.Dispatcher
 import cats.syntax.all.given
 
-abstract class JfxIOApp extends IOApp:
-  type Inject[T] = (Dispatcher[IO], Supervisor[IO]) ?=> Resource[IO, T]
+case class EffexEnv(disp: Dispatcher[IO], superv: Supervisor[IO])
 
-  def stage(args: List[String]): (
-      Dispatcher[IO],
-      Supervisor[IO]
-  ) ?=> Resource[IO, (Dispatcher[IO], Supervisor[IO]) ?=> PrimaryStage]
+abstract class JfxIOApp extends IOApp:
+  type Inject[T] = EffexEnv ?=> Resource[IO, T]
+
+  def stage(
+      args: List[String]
+  ): EffexEnv ?=> Resource[IO, EffexEnv ?=> PrimaryStage]
 
   def run(args: List[String]): IO[ExitCode] =
     (Dispatcher[IO], Supervisor[IO]).parTupled
       .flatMap { case (disp, spv) =>
-        stage(args)(using disp, spv).map { stgF =>
+        val env = EffexEnv(disp, spv)
+        stage(args)(using env).map { stgF =>
           (
-            disp,
-            spv,
-            (d: Dispatcher[IO], s: Supervisor[IO]) ?=> stgF(using d, s)
+            env,
+            env ?=> stgF(using env)
           )
         }
       }
-      .use { case (disp, spv, stg) =>
+      .use { case (env, stg) =>
         val jfxApp = IO(
           new JFXApp3:
             override def start(): Unit =
-              this.stage = stg(using disp, spv)
+              this.stage = stg(using env)
         )
 
         jfxApp

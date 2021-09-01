@@ -32,7 +32,7 @@ import org.http4s.server.Server
 
 object Tracker:
   def folding[T](max: Int, signal: Signal[IO, T])(using
-      s: Supervisor[IO]
+      s: EffexEnv
   ): IO[SignallingRef[IO, Vector[(OffsetDateTime, T)]]] =
     SignallingRef.of[IO, Vector[(OffsetDateTime, T)]](Vector.empty).flatMap {
       chainRef =>
@@ -45,7 +45,7 @@ object Tracker:
             }
           }
 
-        s.supervise(constantUpdate.compile.drain).as(chainRef)
+        s.superv.supervise(constantUpdate.compile.drain).as(chainRef)
     }
 end Tracker
 
@@ -76,7 +76,7 @@ object httpServer extends JfxIOApp:
 
   def trackingChart(
       tracker: Signal[IO, Vector[(OffsetDateTime, Int)]]
-  )(using Dispatcher[IO], Supervisor[IO]) =
+  )(using EffexEnv) =
     new LineChart(CategoryAxis("Time"), NumberAxis("Counter Value")):
       title = "History of changes"
       data.$observe(tracker.map(toSeries).map(_.delegate))
@@ -96,7 +96,7 @@ object httpServer extends JfxIOApp:
 
   def counterLabel(
       state: Signal[IO, Int]
-  )(using Dispatcher[IO], Supervisor[IO]) =
+  )(using EffexEnv) =
     new Label:
       text.$observe(state.map("Current counter:" + _.toString))
 
@@ -141,5 +141,6 @@ object httpServer extends JfxIOApp:
       .withPort(port)
       .withHttpApp(app.orNotFound)
       .build
+  end server
 
 end httpServer

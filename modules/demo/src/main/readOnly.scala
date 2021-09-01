@@ -33,4 +33,5 @@ object readOnly extends JfxIOApp:
                 text.$observe(state.map(_.toString))
             )
     }
+  end stage
 end readOnly
