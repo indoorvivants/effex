@@ -1,16 +1,17 @@
 // VERSIONS
 
 val Versions = new {
-  val Scala     = "3.0.1"
-  val ScalaNext = "3.0.1-RC1"
+  val Scala     = "3.0.2"
+  val ScalaNext = "3.1.0-RC1"
   val AllScala  = Seq(Scala, ScalaNext)
 
   val scalaFX    = "16.0.0-R24"
   val javaFX     = "16"
-  val catsEffect = "3.1.1"
-  val fs2        = "3.0.4"
+  val catsEffect = "3.2.5"
+  val fs2        = "3.1.1"
 
   val http4s = "0.23.0-RC1"
+  val weaver = "0.7.4"
 }
 
 // MODULES
@@ -21,14 +22,16 @@ lazy val core =
   project
     .in(file("modules/core"))
     .settings(
-      libraryDependencies += "org.scalafx"   %% "scalafx"     % Versions.scalaFX,
-      libraryDependencies += "org.typelevel" %% "cats-effect" % Versions.catsEffect,
-      libraryDependencies += "co.fs2"        %% "fs2-core"    % Versions.fs2,
+      libraryDependencies += "org.scalafx"         %% "scalafx"     % Versions.scalaFX,
+      libraryDependencies += "org.typelevel"       %% "cats-effect" % Versions.catsEffect,
+      libraryDependencies += "co.fs2"              %% "fs2-core"    % Versions.fs2,
+      libraryDependencies += "com.disneystreaming" %% "weaver-cats" % Versions.weaver,
+      testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
       libraryDependencies ++= javaFXDependencies(
         Seq("base", "controls"),
         provided = true
       ),
-      name := "core"
+      name                                         := "core"
     )
     .settings(simpleLayout ++ commons)
 
@@ -40,7 +43,7 @@ lazy val demo =
       libraryDependencies ++= javaFXDependencies(
         Seq("base", "controls", "graphics", "web")
       ),
-      run / fork := true,
+      run / fork     := true,
       libraryDependencies ++= Seq(
         "org.http4s" %% "http4s-ember-server" % Versions.http4s,
         "org.http4s" %% "http4s-dsl"          % Versions.http4s
@@ -49,14 +52,15 @@ lazy val demo =
     )
     .settings(simpleLayout ++ commons)
 
-lazy val docs = 
-  project.in(file("modules/docs"))
+lazy val docs =
+  project
+    .in(file("modules/docs"))
     /* .dependsOn(core) */
     .enablePlugins(SubatomicPlugin)
     .settings(publish / skip := true)
 
 // HELPERS
-def osName = System.getProperty("os.name") match {
+def osName    = System.getProperty("os.name") match {
   case n if n.startsWith("Linux")   => "linux"
   case n if n.startsWith("Mac")     => "mac"
   case n if n.startsWith("Windows") => "win"
@@ -82,7 +86,7 @@ lazy val simpleLayout = Seq[Setting[_]](
 
 lazy val commons = Seq(
   scalacOptions ++= Seq("-source:future", "-language:adhocExtensions"),
-  scalaVersion := Versions.Scala,
+  scalaVersion       := Versions.Scala,
   crossScalaVersions := Versions.AllScala,
-  organization := "com.indoorvivants.effex"
+  organization       := "com.indoorvivants.effex"
 )
