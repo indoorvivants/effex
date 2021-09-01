@@ -1,7 +1,7 @@
 // VERSIONS
 
 val Versions = new {
-  val Scala     = "3.0.0"
+  val Scala     = "3.0.1"
   val ScalaNext = "3.0.1-RC1"
   val AllScala  = Seq(Scala, ScalaNext)
 
