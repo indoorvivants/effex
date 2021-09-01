@@ -12,9 +12,9 @@ import fs2.concurrent.SignallingRef
 import scalafx.scene.control.Button
 import scalafx.geometry.Insets
 
-object state extends JfxIOApp:
-  def stage(args: List[String]) =
-    Resource.eval(SignallingRef.of[IO, Int](0)).map { state =>
+object state extends JfxIOApp.Simple:
+  def stage =
+    SignallingRef.of[IO, Int](0).map { state =>
       new JFXApp3.PrimaryStage:
         title.value = "Hello"
         width = 300

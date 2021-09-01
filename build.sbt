@@ -25,6 +25,7 @@ lazy val core =
       libraryDependencies += "org.scalafx"         %% "scalafx"     % Versions.scalaFX,
       libraryDependencies += "org.typelevel"       %% "cats-effect" % Versions.catsEffect,
       libraryDependencies += "co.fs2"              %% "fs2-core"    % Versions.fs2,
+
       libraryDependencies += "com.disneystreaming" %% "weaver-cats" % Versions.weaver,
       testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
       libraryDependencies ++= javaFXDependencies(

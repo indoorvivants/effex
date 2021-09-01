@@ -12,11 +12,12 @@ import fs2.concurrent.SignallingRef
 import scalafx.scene.control.Button
 import scalafx.geometry.Insets
 
-object readOnly extends JfxIOApp:
-  case class WindowSize(width: Int, height: Int)
-  def stage(args: List[String]) =
+case class WindowSize(width: Int, height: Int)
+
+object readOnly extends JfxIOApp.Simple:
+  def stage =
     val default = WindowSize(300, 450)
-    Resource.eval(SignallingRef.of[IO, WindowSize](default)).map { state =>
+    SignallingRef.of[IO, WindowSize](default).map { state =>
       new JFXApp3.PrimaryStage:
         title.value = "Hello"
         width = default.width
