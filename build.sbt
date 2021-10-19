@@ -1,17 +1,16 @@
 // VERSIONS
 
 val Versions = new {
-  val Scala     = "3.0.2"
-  val ScalaNext = "3.1.0-RC1"
-  val AllScala  = Seq(Scala, ScalaNext)
+  val Scala    = "3.1.0-RC3"
+  val AllScala = Seq(Scala)
 
   val scalaFX    = "16.0.0-R24"
   val javaFX     = "16"
-  val catsEffect = "3.2.5"
-  val fs2        = "3.1.1"
+  val catsEffect = "3.2.9"
+  val fs2        = "3.1.6"
 
-  val http4s = "0.23.0-RC1"
-  val weaver = "0.7.4"
+  val http4s = "0.23.5"
+  val weaver = "0.7.7"
 }
 
 // MODULES
@@ -25,7 +24,6 @@ lazy val core =
       libraryDependencies += "org.scalafx"         %% "scalafx"     % Versions.scalaFX,
       libraryDependencies += "org.typelevel"       %% "cats-effect" % Versions.catsEffect,
       libraryDependencies += "co.fs2"              %% "fs2-core"    % Versions.fs2,
-
       libraryDependencies += "com.disneystreaming" %% "weaver-cats" % Versions.weaver,
       testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
       libraryDependencies ++= javaFXDependencies(
@@ -59,9 +57,10 @@ lazy val docs =
     /* .dependsOn(core) */
     .enablePlugins(SubatomicPlugin)
     .settings(publish / skip := true)
+    /* .settings(commons) */
 
 // HELPERS
-def osName    = System.getProperty("os.name") match {
+def osName = System.getProperty("os.name") match {
   case n if n.startsWith("Linux")   => "linux"
   case n if n.startsWith("Mac")     => "mac"
   case n if n.startsWith("Windows") => "win"
