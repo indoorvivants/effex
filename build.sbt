@@ -7,7 +7,7 @@ val Versions = new {
   val scalaFX    = "16.0.0-R24"
   val javaFX     = "16"
   val catsEffect = "3.2.9"
-  val fs2        = "3.1.6"
+  val fs2        = "3.2.12"
 
   val http4s = "0.23.5"
   val weaver = "0.7.7"
@@ -57,7 +57,7 @@ lazy val docs =
     /* .dependsOn(core) */
     .enablePlugins(SubatomicPlugin)
     .settings(publish / skip := true)
-    /* .settings(commons) */
+/* .settings(commons) */
 
 // HELPERS
 def osName = System.getProperty("os.name") match {
